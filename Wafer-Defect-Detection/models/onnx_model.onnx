@@ -1,1 +1,57 @@
+# ================================
+# FULL PTH ➜ ONNX EXPORT SCRIPT
+# ================================
+
+import torch
+import torch.nn as nn
+from torchvision import models
+import os
+
+# -------- CONFIG --------
+NUM_CLASSES = 9
+IMG_SIZE = 256
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+PTH_MODEL_PATH = "/content/drive/MyDrive/WaferModels/best_wafer_model.pth"
+ONNX_SAVE_PATH = "/content/drive/MyDrive/WaferModels/wafer_model.onnx"
+
+os.makedirs(os.path.dirname(ONNX_SAVE_PATH), exist_ok=True)
+
+# -------- LOAD MODEL --------
+print("🔹 Loading model...")
+
+model = models.squeezenet1_1(weights=None)
+model.classifier[1] = nn.Conv2d(512, NUM_CLASSES, kernel_size=1)
+
+model.load_state_dict(torch.load(PTH_MODEL_PATH, map_location=DEVICE))
+model.eval().to(DEVICE)
+
+print("✅ Model loaded successfully")
+
+# -------- DUMMY INPUT --------
+dummy_input = torch.randn(1, 3, IMG_SIZE, IMG_SIZE).to(DEVICE)
+
+# -------- EXPORT TO ONNX --------
+print("🔹 Exporting to ONNX...")
+
+torch.onnx.export(
+    model,
+    dummy_input,
+    ONNX_SAVE_PATH,
+    export_params=True,
+    opset_version=18,                 # CRITICAL
+    do_constant_folding=True,
+    input_names=["input"],
+    output_names=["output"],
+    dynamic_axes={
+        "input": {0: "batch_size"},
+        "output": {0: "batch_size"}
+    }
+)
+
+# -------- VERIFY --------
+print("\n🎉 ONNX EXPORT COMPLETED")
+print(f"📁 Saved at: {ONNX_SAVE_PATH}")
+print(f"📦 File size: {os.path.getsize(ONNX_SAVE_PATH)/1e6:.2f} MB")
+
 
