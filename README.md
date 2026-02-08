@@ -229,6 +229,22 @@ MIT License - See [LICENSE](LICENSE) for details
 
 ---
 
+## 📖 References
+
+### Research Papers & Datasets
+
+1. [ArXiv - Wafer Defect Detection (Section 3)](https://arxiv.org/html/2407.10348v1#S3)
+2. [ArXiv - Semiconductor Inspection (Table 2)](https://arxiv.org/html/2409.04310v1#S4.T2)
+3. [ArXiv - Deep Learning for Wafer Defects](https://arxiv.org/html/2409.04310)
+4. [IEEE DataPort - Wafer Dataset 1](https://dx.doi.org/10.21227/yn1e-rf90)
+5. [IEEE DataPort - Wafer Dataset 2](https://dx.doi.org/10.21227/7x9f-zt52)
+6. [IEEE DataPort - Wafer Dataset 3](https://dx.doi.org/10.21227/wn43-2978)
+7. [IEEE DataPort - Wafer Dataset 4](https://dx.doi.org/10.21227/bqg8-3c61)
+8. [IEEE DataPort - Wafer Dataset 5](https://dx.doi.org/10.21227/q1bh-dh57)
+9. [IEEE IWAPS 2023 - Wafer Inspection](https://doi.org/10.1109/IWAPS60466.2023.10366092)
+
+---
+
 ## 🙏 Acknowledgments
 
 - **IESA DeepTech Hackathon** - Challenge framework and opportunity
