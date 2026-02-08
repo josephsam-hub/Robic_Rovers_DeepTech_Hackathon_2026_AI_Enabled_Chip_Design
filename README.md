@@ -1,259 +1,339 @@
-# 🏆 IESA DeepTech Hackathon 2026 - AI-Enabled Chip Design
+# Wafer Defect Detection
 
-**Team**: Robic Rovers  
-**Challenge**: Semiconductor Wafer/Die Defect Classification using Edge-AI
+**Edge-AI Semiconductor Wafer/Die Defect Classification System**
 
----
-
-## 🎯 Project Overview
-
-This repository contains our solution for the **IESA DeepTech Hackathon 2026**, focused on building an **Edge-AI defect classification system** for semiconductor manufacturing quality control.
-
-### Challenge Requirements
-- ✅ Classify wafer/die SEM images into **8+ defect classes**
-- ✅ Balance **accuracy**, **model size**, and **edge deployment readiness**
-- ✅ Target platform: **NXP eIQ** edge inference
-- ✅ Real-time inspection under limited compute resources
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/Python-3.8%2B-blue)](https://www.python.org/)
+[![PyTorch](https://img.shields.io/badge/PyTorch-2.0%2B-red)](https://pytorch.org/)
 
 ---
 
-## 🚀 Our Solution
+## 📋 Overview
 
-### Wafer Defect Detection System
+An industrial-grade deep learning system for real-time semiconductor wafer defect detection and classification. Built for edge deployment with SqueezeNet 1.1, achieving **94-96% accuracy** in a **2.91 MB** model suitable for production line inspection.
 
-We developed an **ultra-lightweight CNN-based defect detection system** using **SqueezeNet 1.1** that achieves:
-
-- **94-96% accuracy** on major defect classes
-- **2.91 MB model size** (fits entirely in SRAM)
-- **Real-time inference** capability
-- **Explainable AI** with Grad-CAM visualization
-- **Edge-ready deployment** (ONNX, quantization support)
-
-### Key Innovation
-- **Grayscale SEM processing** optimized for texture and structural learning
-- **Fire Module architecture** for extreme compression without accuracy loss
-- **Uncertainty-aware inference** with confidence scoring
-- **Production-ready pipeline** from training to edge deployment
+### Key Features
+- ✅ **Ultra-lightweight**: 2.91 MB model fits entirely in processor SRAM
+- ✅ **Real-time inference**: High-throughput edge deployment
+- ✅ **Explainable AI**: Grad-CAM visualization for defect localization
+- ✅ **Uncertainty-aware**: Confidence scoring and entropy-based rejection
+- ✅ **Production-ready**: ONNX export, quantization support
 
 ---
 
-## 📊 Results Summary
+## 🎯 Defect Classes
 
-| Metric | Value |
-|--------|-------|
-| **Model Architecture** | SqueezeNet 1.1 |
-| **Model Size** | 2.91 MB |
-| **Parameters** | 1.24 Million |
-| **Accuracy** | 94-96% |
-| **Input Resolution** | 256×256 grayscale |
-| **Inference Speed** | Real-time |
-| **Edge Compatibility** | Excellent (SRAM-fit) |
+The system classifies 8 types of semiconductor defects plus clean wafers:
 
-### Defect Classes (9 total)
-- Clean, Bridge, Crack, LER, Line Collapse, LWV, Open, Scratch, Via
+| Class | Description | Count |
+|-------|-------------|-------|
+| **Clean** | Non-defective wafer | 187 |
+| **Bridge** | Unwanted connection between circuit lines | 75 |
+| **Crack** | Physical cracks on wafer surface | 103 |
+| **LER** | Line Edge Roughness defects | 60 |
+| **Line Collapse** | Collapsed resist lines | 51 |
+| **LWV** | Line Width Variation defects | 56 |
+| **Open** | Broken circuit connections | 50 |
+| **Scratch** | Surface scratches | 37 |
+| **Via** | Via connection defects | 20 |
+
+**Total Dataset**: ~1,517 SEM images (256×256 grayscale)
 
 ---
 
-## 🏗️ Repository Structure
+## 🏗️ Architecture: SqueezeNet 1.1
+
+### Why SqueezeNet?
+
+SqueezeNet 1.1 provides the optimal **accuracy-to-footprint ratio** for edge deployment:
 
 ```
-Robic_Rovers_DeepTech_Hackathon_2026_AI_Enabled_Chip_Design/
-├── Wafer-Defect-Detection/          # Main project directory
-│   ├── data/                        # Dataset and descriptions
-│   ├── src/                         # Source code (train, eval, inference)
-│   ├── models/                      # Trained models (PyTorch, ONNX)
-│   ├── experiments/                 # Model comparisons and results
-│   ├── deployment/                  # Edge deployment scripts
-│   ├── notebooks/                   # Jupyter notebooks
-│   └── README.md                    # Detailed project documentation
-└── README.md                        # This file (hackathon overview)
+Input (256×256×1 grayscale)
+    ↓
+Conv2d (Initial convolution)
+    ↓
+Fire Modules (8 blocks)
+  ├─ Squeeze: 1×1 conv (compression)
+  └─ Expand: 1×1 + 3×3 conv (feature extraction)
+    ↓
+Max Pooling
+    ↓
+Final Conv2d
+    ↓
+Global Average Pooling
+    ↓
+Softmax (9 classes)
 ```
 
----
+### Design Principles
+1. **Replace 3×3 with 1×1 filters** → 9x fewer parameters
+2. **Reduce input channels** → Lower computation
+3. **Downsample late** → Preserve spatial information
 
-## 🎓 Technical Highlights
+### Model Comparison
 
-### 1. Model Selection
-We evaluated multiple architectures:
-
-| Model | Size | Accuracy | Edge Fit | Selected |
-|-------|------|----------|----------|----------|
-| **SqueezeNet 1.1** | 2.91 MB | 94-96% | Excellent ✅ | ✅ |
-| EfficientNet-Lite0 | 14 MB | High | Good | ❌ |
-| ResNet-18 | 45 MB | High | Poor | ❌ |
-
-**Decision**: SqueezeNet 1.1 provides optimal accuracy-to-footprint ratio for edge deployment.
-
-### 2. Architecture Innovation
-- **Fire Modules**: Squeeze (1×1) + Expand (1×1 + 3×3) for parameter efficiency
-- **Global Average Pooling**: No heavy dense layers, scalable to any resolution
-- **Late Downsampling**: Preserves spatial information for defect detection
-
-### 3. Training Pipeline
-- Transfer learning from ImageNet
-- Stratified train/val/test split
-- Data augmentation (rotation, flip, brightness, contrast)
-- AdamW optimizer + CosineAnnealing scheduler
-- Class-weighted CrossEntropy loss
-
-### 4. Explainability & Uncertainty
-- **Grad-CAM**: Visual explanation of defect localization
-- **Confidence Scoring**: Top-3 predictions with probabilities
-- **Entropy-based Rejection**: Flag uncertain predictions
+| Model | Size | Parameters | Accuracy | Edge Fit | Cache Fit |
+|-------|------|------------|----------|----------|-----------|
+| **SqueezeNet 1.1** | **2.91 MB** ✅ | 1.24M | 94-96% | Excellent | Yes ✅ |
+| EfficientNet-Lite0 | 14 MB | 4.7M | High | Good | No |
+| ResNet-18 | 45 MB | 11M | High | Poor | No |
+| MobileNetV2 | 14 MB | 3.5M | High | Good | No |
 
 ---
 
-## 🚧 Challenges Overcome
-
-### Dataset Limitations
-- **Problem**: Limited public wafer defect datasets (industrial confidentiality)
-- **Solution**: Obtained images from IEEE papers, explored synthetic generation
-
-### Class Imbalance
-- **Problem**: Uneven distribution (187 clean vs 20 via defects)
-- **Solution**: Stratified splitting, weighted loss, augmentation
-
-### Edge Constraints
-- **Problem**: <5MB model size requirement for SRAM-fit
-- **Solution**: SqueezeNet 1.1 with Fire Modules (2.91 MB)
-
-### Overfitting
-- **Problem**: Larger models (ResNet, EfficientNet) overfitted on limited data
-- **Solution**: Lightweight architecture with better generalization
-
----
-
-## 🔮 Phase-2 Enhancement Plan
-
-> **Note**: If selected for Phase-2, we will receive additional industrial wafer defect datasets. Our enhancement plan includes:
-
-1. **Model Retraining**: Fine-tune on expanded dataset for improved robustness
-2. **Quantization**: INT8 quantization for further size reduction
-3. **Multi-scale Detection**: Handle varying defect sizes
-4. **Real-time Video**: Process continuous inspection streams
-5. **Fab Integration**: Deploy on actual production line hardware
-
----
-
-## 🛠️ Quick Start
+## 🚀 Quick Start
 
 ### Installation
+
 ```bash
-git clone https://github.com/yourusername/Robic_Rovers_DeepTech_Hackathon_2026_AI_Enabled_Chip_Design.git
-cd Robic_Rovers_DeepTech_Hackathon_2026_AI_Enabled_Chip_Design/Wafer-Defect-Detection
+git clone https://github.com/yourusername/Wafer-Defect-Detection.git
+cd Wafer-Defect-Detection
 pip install -r requirements.txt
 ```
 
 ### Training
+
 ```bash
 python src/train.py --data data/Datasets --epochs 50 --batch-size 32
 ```
 
 ### Inference
+
 ```bash
 python src/inference.py --model models/squeezenet_final_2_91MB.pth --image path/to/wafer.png
 ```
 
-### ONNX Export
+### Evaluation
+
 ```bash
-python deployment/export_to_onnx.py --model models/squeezenet_final_2_91MB.pth
+python src/evaluate.py --model models/squeezenet_final_2_91MB.pth --data data/Datasets
 ```
 
 ---
 
-## 📈 Competitive Advantages
+## 📊 Performance
 
-1. **Ultra-Lightweight**: 2.91 MB model fits entirely in processor cache
-2. **Real-time Performance**: High-throughput inspection without cloud dependency
-3. **Industry-Ready**: ONNX export, quantization support, multiple platform compatibility
-4. **Cost-Effective**: Reduced inspection cost, no expensive infrastructure
-5. **Explainable**: Grad-CAM visualization for quality assurance
-6. **Scalable**: Modular pipeline ready for production deployment
+### Metrics
+- **Overall Accuracy**: 94-96% (major classes)
+- **Model Size**: 2.91 MB (FP32)
+- **Inference Speed**: Real-time capable
+- **Memory Footprint**: Fits in SRAM (<5MB)
 
----
-
-## 📚 Documentation
-
-Detailed documentation available in [`Wafer-Defect-Detection/`](Wafer-Defect-Detection/):
-
-- [Main Project README](Wafer-Defect-Detection/README.md) - Complete technical documentation
-- [Dataset Description](Wafer-Defect-Detection/data/dataset_description.md) - Dataset statistics and structure
-- [SqueezeNet Results](Wafer-Defect-Detection/experiments/squeezenet_results.md) - Architecture and performance
-- [Model Comparisons](Wafer-Defect-Detection/experiments/) - EfficientNet, ResNet analysis
-- [Challenges Faced](Wafer-Defect-Detection/experiments/challenges_faced.md) - Problems and solutions
+### Evaluation Features
+- Confusion matrix visualization
+- Per-class accuracy reports
+- Top-3 prediction confidence
+- Entropy-based uncertainty detection
+- Grad-CAM heatmap generation
 
 ---
 
-## 🎯 Hackathon Alignment
+## 🔬 Experiments
 
-### IESA DeepTech Challenge Goals
-✅ **AI-Enabled Chip Design**: Automated defect detection for semiconductor manufacturing  
-✅ **Edge Deployment**: Ultra-lightweight model for on-device inference  
-✅ **Real-world Impact**: Production-ready system for fab quality control  
-✅ **Innovation**: Fire Module architecture + explainable AI  
-✅ **Scalability**: Modular pipeline ready for industrial deployment  
+Detailed results and comparisons available in [`experiments/`](experiments/):
 
----
-
-## 🏅 What Makes This Solution Stand Out
-
-### Engineering Maturity
-- Not just a CNN classifier, but a complete **industrial inspection system**
-- Structured experimentation with comparative analysis
-- Professional documentation and code organization
-
-### Deployment Mindset
-- Model size constraints addressed from day one
-- ONNX export and quantization readiness
-- Multi-platform compatibility (TensorRT, CoreML, TFLite, OpenVINO)
-
-### Practical Innovation
-- Explainability (Grad-CAM) for quality assurance
-- Uncertainty modeling for production reliability
-- Edge-first design philosophy
+- [SqueezeNet Results](experiments/squeezenet_results.md) - Final model architecture and performance
+- [EfficientNet Results](experiments/efficientnet_results.md) - Comparison analysis
+- [ResNet Results](experiments/resnet_results.md) - Baseline comparison
+- [Challenges Faced](experiments/challenges_faced.md) - Dataset limitations and solutions
 
 ---
 
-## 👥 Team: Robic Rovers
+## 📦 Deployment
 
-**Event**: IESA DeepTech Hackathon 2026  
-**Challenge**: AI-Enabled Chip Design  
-**Focus**: Semiconductor Wafer Defect Detection  
-**Target Platform**: NXP eIQ Edge Inference  
+### ONNX Export
+
+```bash
+python deployment/export_to_onnx.py --model models/squeezenet_final_2_91MB.pth
+```
+
+### Edge Inference Demo
+
+```bash
+python deployment/edge_inference_demo.py --onnx models/onnx_model.onnx
+```
+
+### Supported Platforms
+- ✅ TensorRT (NVIDIA)
+- ✅ CoreML (Apple)
+- ✅ TFLite (Google)
+- ✅ OpenVINO (Intel)
+- ✅ NXP eIQ (Target platform)
+
+---
+
+## 📂 Project Structure
+
+```
+Wafer-Defect-Detection/
+├── data/
+│   ├── Datasets/              # Wafer defect images
+│   └── dataset_description.md # Dataset documentation
+├── src/
+│   ├── dataset.py            # Data loading and augmentation
+│   ├── model.py              # SqueezeNet architecture
+│   ├── train.py              # Training pipeline
+│   ├── evaluate.py           # Evaluation metrics
+│   ├── inference.py          # Inference with Grad-CAM
+│   └── gradcam.py            # Explainability module
+├── experiments/
+│   ├── squeezenet_results/   # Training results
+│   ├── efficientnet_results/ # Comparison results
+│   └── *.md                  # Experiment documentation
+├── models/
+│   ├── squeezenet_final_2_91MB.pth  # Final model
+│   └── onnx_model.onnx              # ONNX export
+├── deployment/
+│   ├── export_to_onnx.py     # Model conversion
+│   └── edge_inference_demo.py # Edge deployment demo
+├── notebooks/
+│   ├── 01_data_preparation.ipynb
+│   ├── 02_training_squeezenet.ipynb
+│   └── 03_model_comparison.ipynb
+└── requirements.txt
+```
+
+---
+
+## 🎓 Training Best Practices
+
+### Data Augmentation
+- Random rotation (±15°)
+- Horizontal/vertical flips
+- Brightness/contrast adjustment
+- Gaussian noise injection
+
+### Training Strategy
+- **Optimizer**: AdamW (weight decay 1e-4)
+- **Scheduler**: CosineAnnealingLR
+- **Loss**: CrossEntropyLoss (class-weighted)
+- **Split**: 70% train / 15% val / 15% test (stratified)
+- **Transfer Learning**: ImageNet pretrained weights
+
+### Regularization
+- Dropout (0.5)
+- Early stopping (patience=10)
+- Data augmentation
+- Weight decay
+
+---
+
+## 🔍 Explainability
+
+### Grad-CAM Visualization
+The system includes Grad-CAM (Gradient-weighted Class Activation Mapping) for visual explanation:
+
+```python
+from src.gradcam import generate_gradcam
+heatmap = generate_gradcam(model, image, target_class)
+```
+
+### Uncertainty Quantification
+- **Confidence Threshold**: Reject predictions below 70%
+- **Entropy-based Detection**: Flag high-uncertainty samples
+- **Top-3 Predictions**: Display alternative classifications
+
+---
+
+## 🚧 Challenges & Solutions
+
+### Dataset Limitations
+- **Challenge**: Limited public wafer defect datasets
+- **Solution**: Obtained images from IEEE papers, explored synthetic generation
+
+### Class Imbalance
+- **Challenge**: Uneven distribution (187 clean vs 20 via defects)
+- **Solution**: Stratified splitting, weighted loss, data augmentation
+
+### Edge Constraints
+- **Challenge**: <5MB model size requirement
+- **Solution**: SqueezeNet 1.1 with Fire Modules (2.91 MB)
+
+See [challenges_faced.md](experiments/challenges_faced.md) for complete details.
+
+---
+
+## 🔮 Future Improvements
+
+- [ ] Multi-scale defect detection
+- [ ] Instance segmentation for defect localization
+- [ ] Active learning for data-efficient training
+- [ ] Quantization to INT8 (further size reduction)
+- [ ] Real-time video stream processing
+- [ ] Integration with fab inspection systems
+
+---
+
+## 📝 Phase-2 Enhancement Note
+
+> **Note**: Additional industrial wafer defect datasets will be received after the hackathon deadline. If selected for Phase-2, the model will be retrained and fine-tuned on expanded data to improve detection accuracy and robustness across diverse manufacturing conditions.
 
 ---
 
 ## 📄 License
 
-MIT License - See [LICENSE](LICENSE) for details
-
----
-
-## 📖 References
-
-### Research Papers & Datasets
-
-1. [ArXiv - Wafer Defect Detection (Section 3)](https://arxiv.org/html/2407.10348v1#S3)
-2. [ArXiv - Semiconductor Inspection (Table 2)](https://arxiv.org/html/2409.04310v1#S4.T2)
-3. [ArXiv - Deep Learning for Wafer Defects](https://arxiv.org/html/2409.04310)
-4. [IEEE DataPort - Wafer Dataset 1](https://dx.doi.org/10.21227/yn1e-rf90)
-5. [IEEE DataPort - Wafer Dataset 2](https://dx.doi.org/10.21227/7x9f-zt52)
-6. [IEEE DataPort - Wafer Dataset 3](https://dx.doi.org/10.21227/wn43-2978)
-7. [IEEE DataPort - Wafer Dataset 4](https://dx.doi.org/10.21227/bqg8-3c61)
-8. [IEEE DataPort - Wafer Dataset 5](https://dx.doi.org/10.21227/q1bh-dh57)
-9. [IEEE IWAPS 2023 - Wafer Inspection](https://doi.org/10.1109/IWAPS60466.2023.10366092)
+This project is licensed under the MIT License - see [LICENSE](LICENSE) file for details.
 
 ---
 
 ## 🙏 Acknowledgments
 
-- **IESA DeepTech Hackathon** - Challenge framework and opportunity
-- **NXP Semiconductors** - Target edge platform inspiration
-- **IEEE DataPort** - Dataset sources and research papers
+- **IESA DeepTech Hackathon** - Challenge framework
+- **NXP Semiconductors** - Target edge platform (eIQ)
+- **IEEE DataPort** - Dataset sources
 - **PyTorch Community** - Deep learning framework
 
 ---
 
-**Built with ❤️ for the future of semiconductor manufacturing**
+## 📧 Contact
 
-*For detailed technical documentation, see [Wafer-Defect-Detection/README.md](Wafer-Defect-Detection/README.md)*
+For questions or collaboration:
+- **Project**: Robic Rovers Team
+- **Event**: IESA DeepTech Hackathon 2026
+- **Focus**: AI-Enabled Chip Design
+
+---
+
+## 👥 Team: Robic Rovers
+
+**Academic Year**: 2025–2026
+
+### Team Members & Responsibilities
+
+#### Joseph Sam M - Team Leader
+- Overall project architecture oversight
+- Model selection finalization (SqueezeNet)
+- Results validation and quality assurance
+- Team coordination and activity management
+- Final presentations and documentation review
+
+#### Nithish K - Data Engineer
+- Dataset collection and curation
+- Image preprocessing pipeline
+- Image resizing to 256×256 resolution
+- Normalization and augmentation
+- Train–validation–test splitting
+
+#### Raghu M - Model Developer
+- SqueezeNet model implementation
+- Grayscale input modification
+- Network training and optimization
+- Hyperparameter tuning
+- Performance optimization
+
+#### Rupesh Navin S - Evaluation Specialist
+- Model evaluation metrics (accuracy, precision, recall, F1-score)
+- Confusion matrix analysis
+- Model comparison studies
+- Performance reporting and visualization
+
+#### Suryaprasath S - Deployment Engineer
+- REST API development
+- Model containerization
+- Inference optimization
+- Real-time demo preparation
+- GitHub repository maintenance
+
+---
+
+**Built with ❤️ for semiconductor manufacturing quality control**
